@@ -50,9 +50,50 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     client.emit('meeting-joined', { meetingId });
 
-    client.to(meetingId).emit('user-joined', {
+    client.to(meetingId).except(client.id).emit('user-joined', {
       userId: client.id,
       meetingId,
+    });
+  }
+
+  @SubscribeMessage('webrtc-offer')
+  async handleWebRTCOffer(
+    @MessageBody() data: { offer: any; to: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { offer, to } = data;
+
+    console.log('offer is here', offer);
+
+    this.server.to(to).except(client.id).emit('webrtc-offer', {
+      offer,
+      from: client.id,
+    });
+  }
+
+  @SubscribeMessage('webrtc-answer')
+  async handleWebRTCAnswer(
+    @MessageBody() data: { answer: any; to: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { answer, to } = data;
+
+    this.server.to(to).except(client.id).emit('webrtc-answer', {
+      answer,
+      from: client.id,
+    });
+  }
+
+  @SubscribeMessage('ice-candidate')
+  async handleICECandidate(
+    @MessageBody() data: { candidate: any; to: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { candidate, to } = data;
+
+    this.server.to(to).except(client.id).emit('ice-candidate', {
+      candidate,
+      from: client.id,
     });
   }
 
